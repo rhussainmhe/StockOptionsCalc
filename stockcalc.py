@@ -33,8 +33,14 @@ class DatabaseLoader():
         #Current open Calls table
         calls_html = driver.find_element(by=By.CSS_SELECTOR, value='tbody')
         calls_html_str = calls_html.get_attribute("innerHTML")
+        calls_html_obj = HTML(html=calls_html_str)
 
-        print(calls_html_str)
+        #loop over table to find strike last price volume open interest trade Date
+        for i in calls_html_obj:
+            print(i.text)
+        #add values to dictionary
+
+
 
 loader = DatabaseLoader('TSLA')
 loader.open_web_page()
