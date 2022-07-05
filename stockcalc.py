@@ -101,7 +101,7 @@ class DatabaseLoader():
         pather = path.getsize('/Users/riazhussain/Desktop/Programming/Python/API/StockTrackerAPI/options.db')
         if pather == 0:
             print('Options table does not exist, creating table')
-            c.execute("""CREATE TABLE options ('date' text,'contract_name' text,'last_trade_date' text,'strike' decimal(7,2),'last_price' decimal(5,2),'bid' decimal(5,2),'ask' decimal(5,2),'change' decimal(5,2),'percent_change' decimal(5,2),'volume' int,'open_interest' int,'implied_volatility decimal(5,2)');""" )
+            c.execute("""CREATE TABLE options ('date' text,'option_type' text,'contract_name' text,'last_trade_date' text,'strike' decimal(7,2),'last_price' decimal(5,2),'bid' decimal(5,2),'ask' decimal(5,2),'change' decimal(5,2),'percent_change' decimal(5,2),'volume' int,'open_interest' int,'implied_volatility decimal(5,2)');""" )
         else:
             print('Options table already exists, skipping create table function')
             pass
@@ -125,7 +125,7 @@ class DatabaseLoader():
         print('Insert calls dict into options table')
         try:
             for a in range(0,count):
-                c.execute("""INSERT INTO options VALUES (:date,:contractName,:lastTradeDate,:strike,:lastPrice,:bid,:ask,:change,:percentChange,:volume,:openInterest,:impliedVolatility)""",{'date': str(date.today()),'contractName' : self.calls['Contract Name'][a],'lastTradeDate' : self.calls['Last Trade Date'][a],'strike' : self.calls['Strike'][a],'lastPrice' : self.calls['Last Price'][a],'bid' : self.calls['Bid'][a],'ask' : self.calls['Ask'][a],'change' : self.calls['Change'][a],'percentChange' : self.calls['% Change'][a],'volume' : self.calls['Volume'][a],'openInterest' : self.calls['Open Interest'][a],'impliedVolatility' : self.calls['Implied Volatility'][a]})
+                c.execute("""INSERT INTO options VALUES (:date,'Call',:contractName,:lastTradeDate,:strike,:lastPrice,:bid,:ask,:change,:percentChange,:volume,:openInterest,:impliedVolatility)""",{'date': str(date.today()),'contractName' : self.calls['Contract Name'][a],'lastTradeDate' : self.calls['Last Trade Date'][a],'strike' : self.calls['Strike'][a],'lastPrice' : self.calls['Last Price'][a],'bid' : self.calls['Bid'][a],'ask' : self.calls['Ask'][a],'change' : self.calls['Change'][a],'percentChange' : self.calls['% Change'][a],'volume' : self.calls['Volume'][a],'openInterest' : self.calls['Open Interest'][a],'impliedVolatility' : self.calls['Implied Volatility'][a]})
                 conn.commit()
         except Exception as e:
             print(e)
@@ -137,10 +137,24 @@ class DatabaseLoader():
             count += 1
         try:
             for a in range(0,count):
-                c.execute("""INSERT INTO options VALUES (:date,:contractName,:lastTradeDate,:strike,:lastPrice,:bid,:ask,:change,:percentChange,:volume,:openInterest,:impliedVolatility)""",{'date': str(date.today()),'contractName' : self.puts['Contract Name'][a],'lastTradeDate' : self.puts['Last Trade Date'][a],'strike' : self.puts['Strike'][a],'lastPrice' : self.puts['Last Price'][a],'bid' : self.puts['Bid'][a],'ask' : self.puts['Ask'][a],'change' : self.puts['Change'][a],'percentChange' : self.puts['% Change'][a],'volume' : self.puts['Volume'][a],'openInterest' : self.puts['Open Interest'][a],'impliedVolatility' : self.puts['Implied Volatility'][a]})
+                c.execute("""INSERT INTO options VALUES (:date,'Put',:contractName,:lastTradeDate,:strike,:lastPrice,:bid,:ask,:change,:percentChange,:volume,:openInterest,:impliedVolatility)""",{'date': str(date.today()),'contractName' : self.puts['Contract Name'][a],'lastTradeDate' : self.puts['Last Trade Date'][a],'strike' : self.puts['Strike'][a],'lastPrice' : self.puts['Last Price'][a],'bid' : self.puts['Bid'][a],'ask' : self.puts['Ask'][a],'change' : self.puts['Change'][a],'percentChange' : self.puts['% Change'][a],'volume' : self.puts['Volume'][a],'openInterest' : self.puts['Open Interest'][a],'impliedVolatility' : self.puts['Implied Volatility'][a]})
                 conn.commit()
         except Exception as e:
             print(e)
+
+    def volume_ratio(self):
+        # Search options volume and sum them up for calls/puts
+        c.execute("SELECT SUM(volume) FROM options WHERE date = :date AND option_type = 'Call'", {'date':str(date.today())})
+        rows = c.fetchall()
+        all_call_vol = sum(rows[0])
+
+        c.execute("SELECT SUM(volume) FROM options WHERE date = :date AND option_type = 'Put'", {'date':str(date.today())})
+        rows = c.fetchall()
+        all_put_vol = sum(rows[0])
+
+        print(str(all_call_vol) + ' Calls / ' + str(all_put_vol) + ' Puts')
+
+
 
 loader = DatabaseLoader('TSLA')
 loader.open_web_page()
@@ -148,15 +162,8 @@ loader.create_options_table()
 loader.delete_todays_entries()
 loader.load_calls_to_db()
 loader.load_puts_to_db()
+loader.volume_ratio()
 
-
-c.execute('select * from options;')
-rows = c.fetchall()
-for row in rows:
-    print(row)
 
 conn.close()
 driver.quit()
-
-
-#fix insert statements...change if statement to delete to another func
